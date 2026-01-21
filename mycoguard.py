@@ -1,4 +1,5 @@
 import shutil
+import os
 
 with open("/Users/rishu_06/Desktop/basic projects/biology/message.txt", "r") as f:
  data = f.read()
