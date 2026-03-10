@@ -1,98 +1,58 @@
-import shutil
+import streamlit as st
 import os
+import random
 import time
 
-# ---------------- READ DATA ---------------- #
-with open("/Users/rishu_06/Desktop/basic projects/biology/message.txt", "r") as f:
-    data = f.read()
+st.title("MycoGuard Bio-Inspired Security System")
 
-print("Original Data:")
-print(data)
+nodes = ["nodes/node1","nodes/node2","nodes/node3","nodes/node4"]
 
-# ---------------- SPLIT DATA ---------------- #
-chunks = [
-    data[:len(data)//3],
-    data[len(data)//3: 2*len(data)//3],
-    data[2*len(data)//3:]
-]
+uploaded_file = st.file_uploader("Upload File")
 
-nodes = ["node1", "node2", "node3"]
+if uploaded_file:
 
-for i in range(3):
-    with open(f"{nodes[i]}/chunk{i+1}.txt", "w") as f:
-        f.write(chunks[i])
+    data = uploaded_file.read()
 
-# ---------------- SHOW FILE SIZES ---------------- #
-for i in range(3):
-    path = f"node{i+1}/chunk{i+1}.txt"
-    print(path, "→ size:", os.path.getsize(path))
+    chunk_size = max(1, len(data)//4)
 
-# ---------------- BACKUP SYSTEM ---------------- #
-backup_map = {
-    "chunk1.txt": ["node2"],
-    "chunk2.txt": ["node3"],
-    "chunk3.txt": ["node1"]
-}
+    chunks = [data[i:i+chunk_size] for i in range(0,len(data),chunk_size)]
 
-for chunk, backups in backup_map.items():
-    num = chunk.replace("chunk", "").replace(".txt", "")
-    original_node = f"node{num}"
+    st.subheader("Fragmenting File")
 
-    for backup_node in backups:
-        shutil.copy(
-            f"{original_node}/{chunk}",
-            f"{backup_node}/{chunk}"
-        )
+    for i,chunk in enumerate(chunks):
 
-print("Backup copies created.")
+        node = random.choice(nodes)
 
-# ---------------- FUNCTIONS ---------------- #
-def list_files():
-    files = set()
+        with open(f"{node}/fragment{i}.bin","wb") as f:
+            f.write(chunk)
+
+        st.write(f"Fragment {i} stored in {node}")
+
+    st.success("Distributed across Mycelium Network")
+
+    # Node Failure Simulation
+
+if st.button("Simulate Node Failure"):
+
+    failed = random.choice(nodes)
+
+    for file in os.listdir(failed):
+        os.remove(f"{failed}/{file}")
+
+    st.error(f"{failed} has failed!")
+
+    st.write("Initiating DNA Repair Protocol...")
+
+    #Self-Destruct Feature (Apoptosis)
+
+    if st.button("Activate Self Destruct"):
+
+        st.warning("Apoptosis protocol initiated")
+
+        time.sleep(3)
+
     for node in nodes:
-        for f in os.listdir(node):
-            files.add(f)
-    return list(files)
+        for file in os.listdir(node):
+            os.remove(f"{node}/{file}")
 
-def delete_file_everywhere(filename):
-    for node in nodes:
-        path = os.path.join(node, filename)
-        if os.path.exists(path):
-            os.remove(path)
-    print(f"\n'{filename}' has been securely deleted from all nodes.")
-
-def start_timer(filename):
-    ttl = int(input("\nSet time (in seconds) after which data should self-destruct: "))
-    print(f"\nTimer started for '{filename}' ({ttl} seconds)")
-    time.sleep(ttl)
-
-    print(f"\nTime expired for '{filename}'")
-    permission = input("Do you want to delete this data? (yes/no): ").lower()
-
-    if permission == "yes":
-        delete_file_everywhere(filename)
-    else:
-        print("\nDeletion denied.")
-        choice = input("Reset timer or set new timer? (reset/new): ").lower()
-
-        if choice in ["reset", "new"]:
-            start_timer(filename)
-        else:
-            print("Invalid choice. Data retained safely.")
-
-# ---------------- MAIN PROGRAM ---------------- #
-available_files = list_files()
-
-if not available_files:
-    print("No data available.")
-else:
-    print("\nAvailable data files:")
-    for f in available_files:
-        print("-", f)
-
-    selected_file = input("\nEnter the filename you want to manage: ")
-
-    if selected_file in available_files:
-        start_timer(selected_file)
-    else:
-        print("File not found in MycoGuard system.")
+    st.success("All fragments destroyed")
